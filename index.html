@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bot Lab</title>
+
+    <!-- Space Grotesk font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- The bot's DNA. Loaded before the app so we can read BOT_CONFIG. -->
+    <script src="bot-config.js"></script>
+
+    <style>
+      :root {
+        --accent: #37e6a4; /* overwritten at runtime from BOT_CONFIG.ACCENT_COLOR */
+        --bg: #0b0f14;
+        --panel: #121820;
+        --panel-2: #1a2230;
+        --text: #e6edf3;
+        --muted: #7d8998;
+        --danger: #ff6b6b;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Space Grotesk", system-ui, sans-serif;
+        display: flex;
+        justify-content: center;
+        min-height: 100vh;
+      }
+
+      .app {
+        width: 100%;
+        max-width: 720px;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+      }
+
+      /* ---- Header spec strip ---- */
+      .spec-strip {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 16px 20px;
+        background: var(--panel);
+        border-bottom: 1px solid #222c38;
+      }
+
+      .avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        font-weight: 700;
+        font-size: 20px;
+        color: #0b0f14;
+        background: var(--accent);
+        box-shadow: 0 0 18px -4px var(--accent);
+      }
+
+      .id-block { flex: 1; min-width: 0; }
+      .bot-name {
+        font-weight: 700;
+        font-size: 18px;
+        line-height: 1.1;
+      }
+      .bot-sub {
+        font-size: 12px;
+        color: var(--muted);
+        letter-spacing: 0.5px;
+      }
+
+      .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+      .chip {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        padding: 5px 9px;
+        border-radius: 999px;
+        border: 1px solid #2a3646;
+        color: var(--muted);
+        background: var(--panel-2);
+        white-space: nowrap;
+      }
+      .chip.on {
+        color: #0b0f14;
+        background: var(--accent);
+        border-color: var(--accent);
+      }
+
+      /* ---- Chat log ---- */
+      .log {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .bubble {
+        max-width: 80%;
+        padding: 11px 14px;
+        border-radius: 14px;
+        line-height: 1.45;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+      }
+      .bubble.user {
+        align-self: flex-end;
+        background: var(--accent);
+        color: #0b0f14;
+        border-bottom-right-radius: 4px;
+        font-weight: 500;
+      }
+      .bubble.bot {
+        align-self: flex-start;
+        background: var(--panel-2);
+        border-bottom-left-radius: 4px;
+      }
+      .bubble.error {
+        align-self: flex-start;
+        background: #2a1618;
+        color: var(--danger);
+        border: 1px solid #52242a;
+      }
+
+      /* RAG receipt — makes retrieval VISIBLE */
+      .receipt {
+        align-self: flex-start;
+        max-width: 80%;
+        font-size: 12px;
+        color: var(--muted);
+        background: transparent;
+        border: 1px dashed #2a3646;
+        border-radius: 10px;
+        padding: 8px 11px;
+        font-style: italic;
+      }
+
+      /* thinking dots */
+      .thinking { align-self: flex-start; }
+      .thinking .dots span {
+        display: inline-block;
+        width: 7px;
+        height: 7px;
+        margin-right: 4px;
+        border-radius: 50%;
+        background: var(--muted);
+        animation: blink 1.2s infinite both;
+      }
+      .thinking .dots span:nth-child(2) { animation-delay: 0.2s; }
+      .thinking .dots span:nth-child(3) { animation-delay: 0.4s; }
+      @keyframes blink { 0%, 80%, 100% { opacity: 0.25; } 40% { opacity: 1; } }
+
+      /* ---- Composer ---- */
+      .composer {
+        display: flex;
+        gap: 10px;
+        padding: 14px 20px;
+        background: var(--panel);
+        border-top: 1px solid #222c38;
+      }
+      .composer input {
+        flex: 1;
+        background: var(--panel-2);
+        border: 1px solid #2a3646;
+        color: var(--text);
+        border-radius: 12px;
+        padding: 12px 14px;
+        font-family: inherit;
+        font-size: 15px;
+        outline: none;
+      }
+      .composer input:focus { border-color: var(--accent); }
+      .composer button {
+        background: var(--accent);
+        color: #0b0f14;
+        border: none;
+        border-radius: 12px;
+        padding: 0 20px;
+        font-family: inherit;
+        font-weight: 700;
+        font-size: 15px;
+        cursor: pointer;
+      }
+      .composer button:disabled { opacity: 0.5; cursor: not-allowed; }
+    </style>
+  </head>
+
+  <body>
+    <div class="app">
+      <!-- Header spec strip -->
+      <div class="spec-strip">
+        <div class="avatar" id="avatar">B</div>
+        <div class="id-block">
+          <div class="bot-name" id="botName">My Bot</div>
+          <div class="bot-sub">BOT LAB · powered by a large language model</div>
+        </div>
+        <div class="chips">
+          <div class="chip on" id="chipPersonality">PERSONALITY LOADED</div>
+          <div class="chip" id="chipMemory">MEMORY OFF</div>
+        </div>
+      </div>
+
+      <!-- Chat log -->
+      <div class="log" id="log"></div>
+
+      <!-- Composer -->
+      <form class="composer" id="composer">
+        <input
+          id="input"
+          type="text"
+          placeholder="Say something to your bot..."
+          autocomplete="off"
+        />
+        <button type="submit" id="sendBtn">Send</button>
+      </form>
+    </div>
+
+    <script>
+      const cfg = BOT_CONFIG;
+
+      // ---- Apply identity to the UI (this is why renaming/recoloring is LIVE) ----
+      document.documentElement.style.setProperty("--accent", cfg.ACCENT_COLOR);
+      document.getElementById("botName").textContent = cfg.BOT_NAME;
+      document.getElementById("avatar").textContent = (cfg.BOT_NAME || "B").trim().charAt(0).toUpperCase();
+
+      // Light up the MEMORY chip in the accent color when knowledge is on.
+      const chipMemory = document.getElementById("chipMemory");
+      if (cfg.USE_KNOWLEDGE) {
+        chipMemory.textContent = "MEMORY ON";
+        chipMemory.classList.add("on");
+      }
+
+      const log = document.getElementById("log");
+      const input = document.getElementById("input");
+      const sendBtn = document.getElementById("sendBtn");
+
+      // ---- THE MODEL HAS NO MEMORY ----
+      // The AI does not remember anything between messages. The ONLY way it
+      // "remembers" the conversation is that WE re-send the entire history —
+      // the system prompt plus every message so far — on every single request.
+      // `history` below is that full transcript we keep re-sending.
+      const history = [];
+
+      // The AI likes to write in "markdown" (**bold**, `code`, # headings). Our chat
+      // bubbles show text exactly as-is, so we clean those symbols out first —
+      // otherwise you'd literally see the asterisks in the reply.
+      function stripMarkdown(text) {
+        return text
+          .replace(/```[a-z]*\n?/gi, "") // ``` code fences
+          .replace(/`([^`]+)`/g, "$1") //  `inline code`
+          .replace(/\*\*([^*]+)\*\*/g, "$1") // **bold**
+          .replace(/\*([^*]+)\*/g, "$1") // *italic*
+          .replace(/^#+\s*/gm, "") // # headings
+          .replace(/^\s*---+\s*$/gm, "") // --- horizontal rules
+          .trim();
+      }
+
+      function addBubble(text, kind) {
+        const div = document.createElement("div");
+        div.className = "bubble " + kind;
+        div.textContent = kind === "bot" ? stripMarkdown(text) : text;
+        log.appendChild(div);
+        log.scrollTop = log.scrollHeight;
+        return div;
+      }
+
+      function addReceipt(text) {
+        const div = document.createElement("div");
+        div.className = "receipt";
+        div.textContent = "📎 retrieved: " + text;
+        log.appendChild(div);
+        log.scrollTop = log.scrollHeight;
+      }
+
+      function showThinking() {
+        const div = document.createElement("div");
+        div.className = "thinking";
+        div.innerHTML = '<div class="bubble bot"><span class="dots"><span></span><span></span><span></span></span></div>';
+        log.appendChild(div);
+        log.scrollTop = log.scrollHeight;
+        return div;
+      }
+
+      // ---- BABY RAG: retrieve() ----
+      // Real systems turn text into "embeddings" (lists of numbers) and search a
+      // vector database for the closest matches. We do the SAME IDEA with a
+      // simpler trick: count how many words the question and a fact share.
+      function retrieve(question) {
+        // Break the question into meaningful words (longer than 3 letters).
+        const qWords = question
+          .toLowerCase()
+          .split(/[^a-z0-9]+/)
+          .filter((w) => w.length > 3);
+
+        // Score every fact by how many of those words it contains.
+        const scored = cfg.KNOWLEDGE_BASE.map((fact) => {
+          const factLower = fact.toLowerCase();
+          let score = 0;
+          for (const w of qWords) {
+            if (factLower.includes(w)) score++;
+          }
+          return { fact, score };
+        });
+
+        // Keep only facts that matched at least one word, best first, top 2.
+        return scored
+          .filter((s) => s.score > 0)
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 2)
+          .map((s) => s.fact);
+      }
+
+      // ---- Offline canned replies (backup when wifi dies) ----
+      function offlineReply(text) {
+        const canned = [
+          "(offline mode) Nice! I can't reach my brain right now, but the app still works.",
+          "(offline mode) Good question — flip OFFLINE_MODE back to false once the wifi is up.",
+          "(offline mode) Beep boop. Try changing my color or name while we wait!",
+        ];
+        return canned[history.length % canned.length];
+      }
+
+      async function send(userText) {
+        addBubble(userText, "user");
+        history.push({ role: "user", content: userText });
+
+        // Build the system prompt fresh each time (it may get RAG facts added).
+        let systemPrompt = cfg.SYSTEM_PROMPT;
+
+        if (cfg.USE_KNOWLEDGE) {
+          const facts = retrieve(userText);
+          if (facts.length > 0) {
+            addReceipt(facts.join(" | "));
+            systemPrompt +=
+              "\n\nUse these facts if relevant:\n- " + facts.join("\n- ");
+          }
+        }
+
+        // OFFLINE fallback
+        if (cfg.OFFLINE_MODE) {
+          const reply = offlineReply(userText);
+          addBubble(reply, "bot");
+          history.push({ role: "assistant", content: reply });
+          return;
+        }
+
+        const thinking = showThinking();
+        sendBtn.disabled = true;
+
+        // Re-send system prompt + FULL history every request.
+        const messages = [
+          { role: "system", content: systemPrompt },
+          ...history,
+        ];
+
+        try {
+          const res = await fetch(cfg.PROXY_URL + "/chat", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Class-Token": cfg.CLASS_TOKEN,
+            },
+            body: JSON.stringify({ messages }),
+          });
+
+          thinking.remove();
+          const data = await res.json();
+
+          if (!res.ok) {
+            addBubble(data.reply || "Something went wrong.", "error");
+            return;
+          }
+
+          addBubble(data.reply, "bot");
+          history.push({ role: "assistant", content: data.reply });
+        } catch (err) {
+          thinking.remove();
+          addBubble("Couldn't reach the bot. Check the wifi (or the PROXY_URL in bot-config.js).", "error");
+        } finally {
+          sendBtn.disabled = false;
+          input.focus();
+        }
+      }
+
+      document.getElementById("composer").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const text = input.value.trim();
+        if (!text) return;
+        input.value = "";
+        send(text);
+      });
+
+      // Friendly opening line.
+      addBubble(
+        `Hi! I'm ${cfg.BOT_NAME}. Edit bot-config.js to change who I am, then talk to me.`,
+        "bot"
+      );
+      input.focus();
+    </script>
+  </body>
+</html>

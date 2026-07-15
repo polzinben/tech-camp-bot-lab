@@ -1,0 +1,8 @@
+{
+  "name": "tech-camp-bot-lab",
+  "version": "1.0.0",
+  "description": "Tech Camp Bot Lab — build your own AI chatbot by editing bot-config.js.",
+  "scripts": {
+    "start": "node server.js"
+  }
+}

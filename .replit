@@ -1,0 +1,10 @@
+# A zip/GitHub import to Replit gives a bare container, so we declare Node
+# explicitly — otherwise "node"/"npm" isn't found and Run does nothing.
+modules = ["nodejs-20"]
+
+# No npm packages needed — server.js uses only built-in Node modules.
+run = "node server.js"
+entrypoint = "bot-config.js"
+
+[nix]
+channel = "stable-24_05"
