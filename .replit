@@ -1,10 +1,30 @@
-# A zip/GitHub import to Replit gives a bare container, so we declare Node
-# explicitly — otherwise "node"/"npm" isn't found and Run does nothing.
+# A GitHub import to Replit gives a bare container, so we declare Node explicitly.
 modules = ["nodejs-20"]
-
-# No npm packages needed — server.js uses only built-in Node modules.
-run = "node server.js"
 entrypoint = "bot-config.js"
+
+# Kept for older Replit runners; the [workflows] block below is what the current
+# UI's green Run button actually uses.
+run = "node server.js"
 
 [nix]
 channel = "stable-24_05"
+
+# Map the app's port to the public preview.
+[[ports]]
+localPort = 3000
+externalPort = 80
+
+# The current Replit UI runs the app from a named "Workflow", not the bare `run`
+# line. Without this, a fresh import says "Please use the Workflows pane" and the
+# green Run button does nothing. This makes Run work the moment a student imports.
+[workflows]
+runButton = "Run"
+
+[[workflows.workflow]]
+name = "Run"
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node server.js"
+waitForPort = 3000
