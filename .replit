@@ -28,3 +28,11 @@ mode = "sequential"
 task = "shell.exec"
 args = "node server.js"
 waitForPort = 3000
+
+# Deployment config so the project can be Published without a build error.
+# The Bot Lab is a pure client-side page (index.html + bot-config.js) that talks
+# to the remote proxy, so it deploys as a STATIC site — no server process, no
+# compute, cheapest tier. (server.js above is only for the in-editor Run preview.)
+[deployment]
+deploymentTarget = "static"
+publicDir = "."
