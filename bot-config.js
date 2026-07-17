@@ -60,7 +60,7 @@ const BOT_CONFIG = {
   KNOWLEDGE_BASE: [
     "The Tech Camp closing celebration is on Friday at 3:00 PM.",
     "Tech Journey is the nonprofit that runs Tech Camp in Des Moines.",
-    "This session is taught by Ben and Austin, who both work at Casey's.",
+    "This session is taught by Ben, Joel, Ali, and Bill, who work in data science.",
   ],
 
   // --- OFFLINE MODE (backup) ---
