@@ -61,7 +61,6 @@ const BOT_CONFIG = {
     "The Tech Camp closing celebration is on Friday at 3:00 PM.",
     "Tech Journey is the nonprofit that runs Tech Camp in Des Moines.",
     "This session is taught by Ben and Austin, who both work at Casey's.",
-    "There will be cake at the closing celebration.",
   ],
 
   // --- OFFLINE MODE (backup) ---
