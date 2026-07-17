@@ -375,7 +375,8 @@
               "Content-Type": "application/json",
               "X-Class-Token": cfg.CLASS_TOKEN,
             },
-            body: JSON.stringify({ messages }),
+            // TEMPERATURE lets students dial creativity (low = safe, high = wild).
+            body: JSON.stringify({ messages, temperature: cfg.TEMPERATURE }),
           });
 
           thinking.remove();
